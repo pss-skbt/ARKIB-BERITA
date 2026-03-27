@@ -3,77 +3,115 @@
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body { font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; background: #f4f4f4; color: #333; }
-    .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-    h2, h3 { text-align: center; color: #2c3e50; margin-bottom: 10px; }
-    video { width: 100%; border-radius: 8px; background: #000; }
-    .btn { width: 100%; padding: 15px; margin: 10px 0; border: none; cursor: pointer; font-weight: bold; border-radius: 6px; transition: 0.3s; display: block; text-align: center; text-decoration: none; }
-    .btn-snap { background: #3498db; color: white; }
-    .btn-save { background: #27ae60; color: white; }
-    .btn-pdf { background: #e74c3c; color: white; margin-top: 20px; }
+    :root { --primary: #2c3e50; --accent: #3498db; --success: #27ae60; --danger: #e74c3c; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; background: #f8f9fa; color: #333; }
+    .container { max-width: 500px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+    h2 { text-align: center; color: var(--primary); margin-bottom: 25px; border-bottom: 2px solid var(--accent); padding-bottom: 10px; }
+    
+    /* MOD ADMIN (Disembunyikan secara default) */
+    #adminPanel { display: none; background: #fff3e0; padding: 15px; border-radius: 10px; margin-bottom: 25px; border: 1px dashed #ff9800; }
+    video { width: 100%; border-radius: 8px; background: #000; margin-bottom: 10px; }
+    .btn { width: 100%; padding: 12px; margin: 8px 0; border: none; cursor: pointer; font-weight: bold; border-radius: 8px; transition: 0.3s; display: block; text-align: center; text-decoration: none; }
+    .btn-snap { background: var(--accent); color: white; }
+    .btn-save { background: var(--success); color: white; }
+    .btn-pdf { background: var(--danger); color: white; }
     .btn:disabled { background: #ccc; cursor: not-allowed; }
     
-    input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
+    input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
     
-    #fileList { margin-top: 20px; max-height: 400px; overflow-y: auto; border-top: 1px solid #eee; padding-top: 10px; }
-    .card { background: #fff; padding: 12px; margin-bottom: 10px; border-radius: 8px; border-left: 5px solid #3498db; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; border: 1px solid #eee; }
+    /* MOD PENGGUNA (Carian & Rekod) */
+    .search-box { margin-bottom: 20px; }
+    .search-input { border: 2px solid var(--accent); outline: none; transition: 0.3s; }
+    .search-input:focus { box-shadow: 0 0 8px rgba(52, 152, 219, 0.4); }
+
+    /* Kad Rekod */
+    #fileList { max-height: 500px; overflow-y: auto; }
+    .card { background: white; padding: 15px; margin-bottom: 12px; border-radius: 10px; border-left: 6px solid var(--accent); box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; border: 1px solid #eee; }
     .card-info { flex: 1; padding-right: 10px; }
-    .card-info strong { display: block; font-size: 14px; color: #2c3e50; line-height: 1.4; }
-    .card-info small { color: #7f8c8d; font-size: 11px; margin-top: 4px; display: block; }
-    .tag { font-size: 10px; background: #ebf5fb; color: #3498db; padding: 2px 6px; border-radius: 4px; font-weight: bold; text-transform: uppercase; margin-bottom: 4px; display: inline-block; }
-    .view-link { text-decoration: none; color: white; background: #3498db; font-size: 11px; font-weight: bold; padding: 6px 10px; border-radius: 4px; white-space: nowrap; }
+    .tag { font-size: 10px; background: #e3f2fd; color: var(--accent); padding: 3px 8px; border-radius: 4px; font-weight: bold; text-transform: uppercase; }
+    .title { display: block; font-size: 15px; font-weight: bold; margin: 5px 0; color: var(--primary); }
+    .date { font-size: 11px; color: #95a5a6; }
+    .view-btn { text-decoration: none; background: var(--accent); color: white; padding: 8px 15px; border-radius: 6px; font-size: 12px; font-weight: bold; }
     
-    #status { font-weight: bold; text-align: center; color: #e67e22; min-height: 24px; margin: 10px 0; }
+    #status { font-weight: bold; text-align: center; color: #d35400; min-height: 24px; margin-bottom: 10px; }
+    .admin-login-area { text-align: center; margin-top: 30px; border-top: 1px solid #eee; padding-top: 15px; }
+    .login-link { background: none; border: none; color: #bdc3c7; cursor: pointer; font-size: 12px; }
   </style>
 </head>
 <body>
 
 <div class="container">
-  <h2>📸 ARKIB BERITA</h2>
-  
-  <video id="video" autoplay playsinline></video>
-  <canvas id="canvas" style="display:none;"></canvas>
-  
-  <button class="btn btn-snap" onclick="takeSnapshot()">1. AMBIL GAMBAR</button>
-  
-  <input type="text" id="tajuk" placeholder="Masukkan Tajuk Berita...">
-  
-  <select id="jenis">
-    <option value="Nasional">Nasional</option>
-    <option value="Antarabangsa">Antarabangsa</option>
-    <option value="Politik">Politik</option>
-    <option value="Ekonomi">Ekonomi</option>
-    <option value="Sukan">Sukan</option>
-    <option value="Hiburan">Hiburan</option>
-    <option value="Pendidikan">Pendidikan</option>
-    <option value="Teknologi">Teknologi</option>
-    <option value="Jenayah">Jenayah</option>
-    <option value="Tempatan">Tempatan</option>
-    <option value="Lain-lain">Lain-lain</option>
-  </select>
+  <h2>🗞️ ARKIB BERITA DIGITAL</h2>
 
-  <button class="btn btn-save" id="saveBtn" onclick="saveData()">2. SIMPAN KE DRIVE & SHEET</button>
+  <div id="adminPanel">
+    <h4 style="margin:0 0 10px 0; color:#e67e22;">🛠️ MOD PENYELARAS (ADMIN)</h4>
+    <video id="video" autoplay playsinline></video>
+    <canvas id="canvas" style="display:none;"></canvas>
+    
+    <button class="btn btn-snap" onclick="takeSnapshot()">📸 1. AMBIL GAMBAR</button>
+    
+    <input type="text" id="tajuk" placeholder="Taip Tajuk Berita...">
+    <select id="jenis">
+      <option value="Nasional">Nasional</option>
+      <option value="Antarabangsa">Antarabangsa</option>
+      <option value="Politik">Politik</option>
+      <option value="Ekonomi">Ekonomi</option>
+      <option value="Sukan">Sukan</option>
+      <option value="Pendidikan">Pendidikan</option>
+      <option value="Teknologi">Teknologi</option>
+      <option value="Tempatan">Tempatan</option>
+      <option value="Lain-lain">Lain-lain</option>
+    </select>
+    
+    <button class="btn btn-save" id="saveBtn" onclick="saveData()">💾 2. SIMPAN KE DRIVE & SHEET</button>
+    <button class="btn btn-pdf" id="pdfBtn" onclick="exportPDF()">📄 JANA PDF LAPORAN</button>
+    <hr>
+  </div>
+
   <p id="status"></p>
 
-  <hr>
-  
-  <h3>📂 Rekod Terkini</h3>
+  <div class="search-box">
+    <input type="text" id="searchInput" class="search-input" placeholder="🔍 Cari tajuk berita..." onkeyup="filterRecords()">
+  </div>
+
   <div id="fileList">Memuatkan rekod...</div>
 
-  <button class="btn btn-pdf" id="pdfBtn" onclick="exportPDF()">📄 EXPORT PDF LAPORAN</button>
+  <div class="admin-login-area">
+    <button class="login-link" onclick="handleAdminLogin()" id="loginBtn">🔐 Admin Login</button>
+  </div>
 </div>
 
 <script>
   // PENTING: Gunakan URL Web App anda yang terkini
   const GAS_URL = "https://script.google.com/macros/s/AKfycbxaVLYwJ6kUzv0tg8iNxerMrsNsgE5MZzmqyzp19o7CkpFEsE4VurUC8NN5fBE-XLQ/exec"; 
 
+  let allRecords = [];
+  let isAdmin = false;
   const video = document.getElementById('video');
   const canvas = document.getElementById('canvas');
   let capturedImage = null;
 
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-    .then(stream => { video.srcObject = stream; })
-    .catch(err => alert("Kamera gagal: " + err));
+  // Muat rekod semasa mula (Paparan Pengguna)
+  window.onload = loadRecords;
+
+  function handleAdminLogin() {
+    const pass = prompt("Masukkan Kata Laluan Admin:");
+    if (pass === "cikgu123") { // Anda boleh tukar kata laluan di sini
+      isAdmin = true;
+      document.getElementById('adminPanel').style.display = 'block';
+      document.getElementById('loginBtn').innerText = "🔓 Mod Admin Aktif";
+      startCamera();
+      alert("Selamat datang! Anda kini boleh mengambil gambar dan menyimpan rekod.");
+    } else {
+      alert("Kata laluan salah.");
+    }
+  }
+
+  function startCamera() {
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+      .then(stream => { video.srcObject = stream; })
+      .catch(err => alert("Kamera gagal: " + err));
+  }
 
   function takeSnapshot() {
     canvas.width = video.videoWidth;
@@ -94,7 +132,7 @@
     const status = document.getElementById('status');
 
     btn.disabled = true;
-    status.innerText = "⏳ Sedang menghantar ke Google...";
+    status.innerText = "⏳ Sedang menyimpan ke Google...";
     status.style.color = "#e67e22";
 
     fetch(GAS_URL, {
@@ -107,7 +145,7 @@
       btn.disabled = false;
       document.getElementById('tajuk').value = "";
       capturedImage = null;
-      setTimeout(loadRecords, 3000); // Tunggu 3 saat baru refresh senarai
+      setTimeout(loadRecords, 2000); 
     }).catch(err => {
       status.innerText = "❌ Ralat sambungan!";
       btn.disabled = false;
@@ -116,39 +154,50 @@
 
   function loadRecords() {
     const listDiv = document.getElementById('fileList');
-    
     fetch(GAS_URL + "?action=getList")
       .then(res => res.json())
       .then(data => {
-        if (!data || data.length === 0) {
-          listDiv.innerHTML = "<p style='text-align:center; font-size:13px; color:#888;'>Tiada rekod dijumpai.</p>";
-          return;
-        }
-        let html = "";
-        data.forEach(item => {
-          // Format tarikh jika ia objek tarikh
-          let dateStr = item.date;
-          html += `
-            <div class="card">
-              <div class="card-info">
-                <span class="tag">${item.kategori}</span>
-                <strong>${item.tajuk}</strong>
-                <small>📅 ${dateStr}</small>
-              </div>
-              <a href="${item.url}" target="_blank" class="view-link">LIHAT</a>
-            </div>`;
-        });
-        listDiv.innerHTML = html;
+        allRecords = data;
+        renderRecords(data);
       })
       .catch(err => {
-        listDiv.innerHTML = "<small style='color:red;'>Gagal memuatkan rekod. Sila muat semula halaman.</small>";
+        listDiv.innerHTML = "<small style='color:red;'>Gagal memuatkan rekod.</small>";
       });
+  }
+
+  function renderRecords(data) {
+    const listDiv = document.getElementById('fileList');
+    if (!data || data.length === 0) {
+      listDiv.innerHTML = "<p style='text-align:center; font-size:13px; color:#888;'>Tiada rekod dijumpai.</p>";
+      return;
+    }
+    let html = "";
+    data.forEach(item => {
+      html += `
+        <div class="card">
+          <div class="card-info">
+            <span class="tag">${item.kategori}</span>
+            <span class="title">${item.tajuk}</span>
+            <small>📅 ${item.date}</small>
+          </div>
+          <a href="${item.url}" target="_blank" class="view-btn">LIHAT</a>
+        </div>`;
+    });
+    listDiv.innerHTML = html;
+  }
+
+  function filterRecords() {
+    const term = document.getElementById('searchInput').value.toLowerCase();
+    const filtered = allRecords.filter(item => 
+      item.tajuk.toLowerCase().includes(term) || 
+      item.kategori.toLowerCase().includes(term)
+    );
+    renderRecords(filtered);
   }
 
   function exportPDF() {
     const status = document.getElementById('status');
     const pdfBtn = document.getElementById('pdfBtn');
-    
     status.innerText = "⏳ Menjana PDF... Sila tunggu.";
     pdfBtn.disabled = true;
 
@@ -159,23 +208,16 @@
           const link = document.createElement('a');
           link.href = res.url;
           link.download = "Laporan_Arkib_Berita.pdf";
-          document.body.appendChild(link);
           link.click();
-          document.body.removeChild(link);
-          status.innerText = "✅ PDF sedia dimuat turun!";
-        } else {
-          alert("Gagal menjana PDF.");
+          status.innerText = "✅ PDF berjaya dijana!";
         }
         pdfBtn.disabled = false;
       })
-      .catch(err => {
-        alert("Ralat PDF: " + err);
+      .catch(() => {
+        alert("Ralat menjana PDF.");
         pdfBtn.disabled = false;
       });
   }
-
-  // Muat dashboard secara automatik apabila aplikasi dibuka
-  window.onload = loadRecords;
 </script>
 
 </body>
