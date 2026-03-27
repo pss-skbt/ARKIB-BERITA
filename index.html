@@ -8,23 +8,22 @@
     .container { max-width: 500px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
     h2 { text-align: center; color: var(--primary); margin-bottom: 25px; border-bottom: 2px solid var(--accent); padding-bottom: 10px; }
     
-    /* MOD ADMIN (Disembunyikan secara default) */
+    /* MOD ADMIN */
     #adminPanel { display: none; background: #fff3e0; padding: 15px; border-radius: 10px; margin-bottom: 25px; border: 1px dashed #ff9800; }
     video { width: 100%; border-radius: 8px; background: #000; margin-bottom: 10px; }
     .btn { width: 100%; padding: 12px; margin: 8px 0; border: none; cursor: pointer; font-weight: bold; border-radius: 8px; transition: 0.3s; display: block; text-align: center; text-decoration: none; }
     .btn-snap { background: var(--accent); color: white; }
     .btn-save { background: var(--success); color: white; }
     .btn-pdf { background: var(--danger); color: white; }
+    .btn-logout { background: #95a5a6; color: white; margin-top: 10px; font-size: 12px; padding: 8px; }
     .btn:disabled { background: #ccc; cursor: not-allowed; }
     
     input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
     
-    /* MOD PENGGUNA (Carian & Rekod) */
+    /* MOD PENGGUNA */
     .search-box { margin-bottom: 20px; }
-    .search-input { border: 2px solid var(--accent); outline: none; transition: 0.3s; }
-    .search-input:focus { box-shadow: 0 0 8px rgba(52, 152, 219, 0.4); }
+    .search-input { border: 2px solid var(--accent); outline: none; transition: 0.3s; width: 100%; padding: 12px; border-radius: 8px; box-sizing: border-box; }
 
-    /* Kad Rekod */
     #fileList { max-height: 500px; overflow-y: auto; }
     .card { background: white; padding: 15px; margin-bottom: 12px; border-radius: 10px; border-left: 6px solid var(--accent); box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; border: 1px solid #eee; }
     .card-info { flex: 1; padding-right: 10px; }
@@ -49,26 +48,22 @@
     <canvas id="canvas" style="display:none;"></canvas>
     
     <button class="btn btn-snap" onclick="takeSnapshot()">📸 1. AMBIL GAMBAR</button>
+    <p id="status"></p>
     
     <input type="text" id="tajuk" placeholder="Taip Tajuk Berita...">
     <select id="jenis">
       <option value="Nasional">Nasional</option>
-      <option value="Antarabangsa">Antarabangsa</option>
-      <option value="Politik">Politik</option>
-      <option value="Ekonomi">Ekonomi</option>
       <option value="Sukan">Sukan</option>
       <option value="Pendidikan">Pendidikan</option>
-      <option value="Teknologi">Teknologi</option>
       <option value="Tempatan">Tempatan</option>
       <option value="Lain-lain">Lain-lain</option>
     </select>
     
-    <button class="btn btn-save" id="saveBtn" onclick="saveData()">💾 2. SIMPAN KE DRIVE & SHEET</button>
+    <button class="btn btn-save" id="saveBtn" onclick="saveData()">💾 2. SIMPAN KE DRIVE</button>
     <button class="btn btn-pdf" id="pdfBtn" onclick="exportPDF()">📄 JANA PDF LAPORAN</button>
-    <hr>
+    
+    <button class="btn btn-logout" onclick="adminLogout()">🚪 KELUAR MOD ADMIN</button>
   </div>
-
-  <p id="status"></p>
 
   <div class="search-box">
     <input type="text" id="searchInput" class="search-input" placeholder="🔍 Cari tajuk berita..." onkeyup="filterRecords()">
@@ -82,34 +77,49 @@
 </div>
 
 <script>
-  // PENTING: Gunakan URL Web App anda yang terkini
   const GAS_URL = "https://script.google.com/macros/s/AKfycbxaVLYwJ6kUzv0tg8iNxerMrsNsgE5MZzmqyzp19o7CkpFEsE4VurUC8NN5fBE-XLQ/exec"; 
 
   let allRecords = [];
   let isAdmin = false;
+  let streamRef = null;
   const video = document.getElementById('video');
   const canvas = document.getElementById('canvas');
   let capturedImage = null;
 
-  // Muat rekod semasa mula (Paparan Pengguna)
   window.onload = loadRecords;
 
   function handleAdminLogin() {
     const pass = prompt("Masukkan Kata Laluan Admin:");
-    if (pass === "cikgu123") { // Anda boleh tukar kata laluan di sini
+    if (pass === "cikgu123") { 
       isAdmin = true;
       document.getElementById('adminPanel').style.display = 'block';
-      document.getElementById('loginBtn').innerText = "🔓 Mod Admin Aktif";
+      document.getElementById('loginBtn').style.display = 'none';
       startCamera();
-      alert("Selamat datang! Anda kini boleh mengambil gambar dan menyimpan rekod.");
     } else {
-      alert("Kata laluan salah.");
+      alert("Salah.");
     }
+  }
+
+  // Fungsi Logout
+  function adminLogout() {
+    isAdmin = false;
+    document.getElementById('adminPanel').style.display = 'none';
+    document.getElementById('loginBtn').style.display = 'inline-block';
+    document.getElementById('status').innerText = "";
+    
+    // Hentikan Kamera
+    if (streamRef) {
+      streamRef.getTracks().forEach(track => track.stop());
+    }
+    alert("Anda telah keluar dari Mod Admin.");
   }
 
   function startCamera() {
     navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-      .then(stream => { video.srcObject = stream; })
+      .then(stream => { 
+        streamRef = stream;
+        video.srcObject = stream; 
+      })
       .catch(err => alert("Kamera gagal: " + err));
   }
 
@@ -118,104 +128,76 @@
     canvas.height = video.videoHeight;
     canvas.getContext('2d').drawImage(video, 0, 0);
     capturedImage = canvas.toDataURL('image/jpeg');
-    document.getElementById('status').innerText = "📸 Gambar sedia untuk disimpan!";
+    document.getElementById('status').innerText = "📸 Gambar sedia!";
     document.getElementById('status').style.color = "#27ae60";
   }
 
   function saveData() {
-    if (!capturedImage) return alert("Sila ambil gambar dahulu!");
+    if (!capturedImage) return alert("Ambil gambar dahulu!");
     const tajuk = document.getElementById('tajuk').value;
     const jenis = document.getElementById('jenis').value;
-    if (!tajuk) return alert("Sila masukkan tajuk berita!");
+    if (!tajuk) return alert("Isi tajuk!");
 
     const btn = document.getElementById('saveBtn');
-    const status = document.getElementById('status');
-
     btn.disabled = true;
-    status.innerText = "⏳ Sedang menyimpan ke Google...";
-    status.style.color = "#e67e22";
+    document.getElementById('status').innerText = "⏳ Menyimpan...";
 
     fetch(GAS_URL, {
       method: "POST",
       mode: "no-cors", 
       body: JSON.stringify({ image: capturedImage, tajuk: tajuk, jenis: jenis })
     }).then(() => {
-      status.innerText = "✅ Berjaya Disimpan!";
-      status.style.color = "#27ae60";
+      document.getElementById('status').innerText = "✅ Berjaya!";
       btn.disabled = false;
       document.getElementById('tajuk').value = "";
       capturedImage = null;
-      setTimeout(loadRecords, 2000); 
-    }).catch(err => {
-      status.innerText = "❌ Ralat sambungan!";
-      btn.disabled = false;
+      loadRecords();
     });
   }
 
   function loadRecords() {
-    const listDiv = document.getElementById('fileList');
     fetch(GAS_URL + "?action=getList")
       .then(res => res.json())
       .then(data => {
         allRecords = data;
         renderRecords(data);
-      })
-      .catch(err => {
-        listDiv.innerHTML = "<small style='color:red;'>Gagal memuatkan rekod.</small>";
       });
   }
 
   function renderRecords(data) {
     const listDiv = document.getElementById('fileList');
-    if (!data || data.length === 0) {
-      listDiv.innerHTML = "<p style='text-align:center; font-size:13px; color:#888;'>Tiada rekod dijumpai.</p>";
-      return;
-    }
     let html = "";
     data.forEach(item => {
-      html += `
-        <div class="card">
-          <div class="card-info">
-            <span class="tag">${item.kategori}</span>
-            <span class="title">${item.tajuk}</span>
-            <small>📅 ${item.date}</small>
-          </div>
-          <a href="${item.url}" target="_blank" class="view-btn">LIHAT</a>
-        </div>`;
+      html += `<div class="card">
+        <div class="card-info">
+          <span class="tag">${item.kategori}</span>
+          <span class="title">${item.tajuk}</span>
+          <small>📅 ${item.date}</small>
+        </div>
+        <a href="${item.url}" target="_blank" class="view-btn">LIHAT</a>
+      </div>`;
     });
-    listDiv.innerHTML = html;
+    listDiv.innerHTML = html || "<p style='text-align:center;'>Tiada rekod.</p>";
   }
 
   function filterRecords() {
     const term = document.getElementById('searchInput').value.toLowerCase();
-    const filtered = allRecords.filter(item => 
-      item.tajuk.toLowerCase().includes(term) || 
-      item.kategori.toLowerCase().includes(term)
-    );
+    const filtered = allRecords.filter(item => item.tajuk.toLowerCase().includes(term));
     renderRecords(filtered);
   }
 
   function exportPDF() {
-    const status = document.getElementById('status');
-    const pdfBtn = document.getElementById('pdfBtn');
-    status.innerText = "⏳ Menjana PDF... Sila tunggu.";
-    pdfBtn.disabled = true;
-
+    document.getElementById('status').innerText = "⏳ Menjana PDF...";
     fetch(GAS_URL + "?action=exportPDF")
       .then(res => res.json())
       .then(res => {
         if(res.url) {
           const link = document.createElement('a');
           link.href = res.url;
-          link.download = "Laporan_Arkib_Berita.pdf";
+          link.download = "Laporan_Arkib.pdf";
           link.click();
-          status.innerText = "✅ PDF berjaya dijana!";
+          document.getElementById('status').innerText = "✅ PDF Siap!";
         }
-        pdfBtn.disabled = false;
-      })
-      .catch(() => {
-        alert("Ralat menjana PDF.");
-        pdfBtn.disabled = false;
       });
   }
 </script>
