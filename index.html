@@ -1,98 +1,78 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    :root { --primary: #2c3e50; --success: #27ae60; --danger: #e74c3c; --accent: #3498db; }
-    body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding: 15px; }
-    .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-    #video { width: 100%; border-radius: 8px; background: #000; margin-bottom: 10px; }
-    input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-    .btn { width: 100%; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin-bottom: 10px; color: white; }
-    .btn-view { background: var(--accent); }
-    .btn-save { background: var(--success); }
-    #status { font-weight: bold; text-align: center; color: var(--primary); }
-    .card { background: #fff; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 6px solid var(--primary); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-    .link-btn { text-decoration: none; color: var(--accent); font-weight: bold; border: 1px solid #ddd; padding: 5px 10px; border-radius: 4px; }
-    canvas { display: none; }
+    /* Gunakan CSS yang sama seperti sebelum ini */
+    body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
+    .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 10px; }
+    video { width: 100%; border-radius: 5px; }
+    .btn { width: 100%; padding: 15px; margin: 10px 0; border: none; cursor: pointer; font-weight: bold; }
+    .btn-save { background: green; color: white; }
+    #fileList { margin-top: 20px; }
+    .card { background: #eee; padding: 10px; margin-bottom: 5px; border-radius: 5px; display: flex; justify-content: space-between; }
   </style>
 </head>
 <body>
 
 <div class="container">
-  <h2>🗞️ ARKIB BERITA</h2>
-  
+  <h2>📸 Arkib GitHub + Google</h2>
   <video id="video" autoplay playsinline></video>
-  <canvas id="canvas"></canvas>
+  <canvas id="canvas" style="display:none;"></canvas>
   
-  <button class="btn btn-view" onclick="takeSnapshot()">1. AMBIL GAMBAR (VIEW)</button>
+  <button class="btn" onclick="takeSnapshot()" style="background:blue; color:white;">AMBIL GAMBAR</button>
+  <input type="text" id="tajuk" placeholder="Tajuk Berita" style="width:94%; padding:10px; margin:10px 0;">
   
-  <input type="text" id="tajuk" placeholder="Tajuk Berita / Muka Surat...">
-  <select id="jenis">
-    <option value="Nasional">Nasional</option>
+  <select id="jenis" style="width:100%; padding:10px; margin-bottom:10px;">
     <option value="Sukan">Sukan</option>
-    <option value="Politik">Politik</option>
-    <option value="Ekonomi">Ekonomi</option>
-    <option value="Pendidikan">Pendidikan</option>
-    <option value="Kesihatan">Kesihatan</option>
-    <option value="Pelancongan">Pelancongan</option>
-    <option value="Kraftangan">Kraftangan</option>
+    <option value="Nasional">Nasional</option>
   </select>
 
-  <button class="btn btn-save" id="saveBtn" onclick="saveData()">2. SIMPAN KE CLOUD</button>
+  <button class="btn btn-save" id="saveBtn" onclick="saveData()">SIMPAN KE GOOGLE DRIVE</button>
   <p id="status"></p>
 
   <hr>
+  <h3>📂 Rekod Terkini</h3>
   <div id="fileList">Memuatkan rekod...</div>
 </div>
 
 <script>
-  // GANTIKAN URL DI BAWAH DENGAN URL WEB APP ANDA
-  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxuCUl_D-pQg5Oqwx8oyBgA2S6wbsY_L_DyCk3L4YRRrosCGHGgSRna0LdSLXNo7l9f/exec";
+  // GANTIKAN DENGAN URL WEB APP ANDA DARI LANGKAH 1
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbwvejsJP6XgF0pPeEy7lSWlRcB0kyE7sEcv7Zno-OjSma1IXXiqAI2H9Cz55riKocCN/exec"; 
 
   const video = document.getElementById('video');
   const canvas = document.getElementById('canvas');
   let capturedImage = null;
 
   navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-    .then(stream => video.srcObject = stream);
+    .then(stream => { video.srcObject = stream; });
 
   function takeSnapshot() {
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     canvas.getContext('2d').drawImage(video, 0, 0);
     capturedImage = canvas.toDataURL('image/jpeg');
-    document.getElementById('status').innerText = "📸 Gambar sedia!";
+    document.getElementById('status').innerText = "Gambar sedia!";
   }
 
-  async function saveData() {
-    if (!capturedImage) return alert("Tangkap gambar dulu!");
+  function saveData() {
+    if (!capturedImage) return alert("Ambil gambar dahulu!");
     const tajuk = document.getElementById('tajuk').value;
     const jenis = document.getElementById('jenis').value;
-    if (!tajuk) return alert("Isi tajuk!");
 
     document.getElementById('saveBtn').disabled = true;
-    document.getElementById('status').innerText = "⏳ Sedang menghantar ke Google...";
+    document.getElementById('status').innerText = "Sedang menghantar ke Google...";
 
-    // Kita gunakan form data untuk hantar ke GAS
-    const formData = new FormData();
-    formData.append('image', capturedImage);
-    formData.append('title', tajuk);
-    formData.append('type', jenis);
-
-    try {
-      // Guna 'no-cors' jika sangkut, tapi lebih baik guna JSONP atau handle di GAS
-      await fetch(WEB_APP_URL, {
-        method: 'POST',
-        body: new URLSearchParams(formData)
-      });
-      document.getElementById('status').innerText = "✅ Selesai! Semak Google Sheet anda.";
+    // Teknik Fetch untuk hantar data ke Google Script
+    fetch(GAS_URL, {
+      method: "POST",
+      mode: "no-cors", 
+      body: JSON.stringify({ image: capturedImage, tajuk: tajuk, jenis: jenis })
+    }).then(() => {
+      document.getElementById('status').innerText = "✅ Berjaya! Sila semak Sheet.";
       document.getElementById('saveBtn').disabled = false;
-    } catch (e) {
-      document.getElementById('status').innerText = "⚠️ Respons dihantar (Semak Sheet).";
-      document.getElementById('saveBtn').disabled = false;
-    }
+      document.getElementById('tajuk').value = "";
+    }).catch(err => alert("Ralat: " + err));
   }
 </script>
 </body>
