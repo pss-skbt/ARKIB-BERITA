@@ -5,26 +5,25 @@
   <style>
     body { font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; background: #f4f4f4; color: #333; }
     .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-    h2, h3 { text-align: center; color: #2c3e50; }
+    h2, h3 { text-align: center; color: #2c3e50; margin-bottom: 10px; }
     video { width: 100%; border-radius: 8px; background: #000; }
-    .btn { width: 100%; padding: 15px; margin: 10px 0; border: none; cursor: pointer; font-weight: bold; border-radius: 6px; transition: 0.3s; }
+    .btn { width: 100%; padding: 15px; margin: 10px 0; border: none; cursor: pointer; font-weight: bold; border-radius: 6px; transition: 0.3s; display: block; text-align: center; text-decoration: none; }
     .btn-snap { background: #3498db; color: white; }
     .btn-save { background: #27ae60; color: white; }
     .btn-pdf { background: #e74c3c; color: white; margin-top: 20px; }
-    .btn:disabled { background: #ccc; }
+    .btn:disabled { background: #ccc; cursor: not-allowed; }
     
-    input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+    input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
     
-    /* Style Rekod Terkini (Dashboard) */
-    #fileList { margin-top: 20px; max-height: 400px; overflow-y: auto; }
+    #fileList { margin-top: 20px; max-height: 400px; overflow-y: auto; border-top: 1px solid #eee; padding-top: 10px; }
     .card { background: #fff; padding: 12px; margin-bottom: 10px; border-radius: 8px; border-left: 5px solid #3498db; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; border: 1px solid #eee; }
-    .card-info { flex: 1; }
-    .card-info strong { display: block; font-size: 14px; color: #2c3e50; }
-    .card-info small { color: #7f8c8d; font-size: 11px; }
-    .tag { font-size: 10px; background: #ebf5fb; color: #3498db; padding: 2px 6px; border-radius: 4px; font-weight: bold; text-transform: uppercase; }
-    .view-link { text-decoration: none; color: #3498db; font-size: 12px; font-weight: bold; border: 1px solid #3498db; padding: 4px 8px; border-radius: 4px; }
+    .card-info { flex: 1; padding-right: 10px; }
+    .card-info strong { display: block; font-size: 14px; color: #2c3e50; line-height: 1.4; }
+    .card-info small { color: #7f8c8d; font-size: 11px; margin-top: 4px; display: block; }
+    .tag { font-size: 10px; background: #ebf5fb; color: #3498db; padding: 2px 6px; border-radius: 4px; font-weight: bold; text-transform: uppercase; margin-bottom: 4px; display: inline-block; }
+    .view-link { text-decoration: none; color: white; background: #3498db; font-size: 11px; font-weight: bold; padding: 6px 10px; border-radius: 4px; white-space: nowrap; }
     
-    #status { font-weight: bold; text-align: center; color: #e67e22; min-height: 20px; }
+    #status { font-weight: bold; text-align: center; color: #e67e22; min-height: 24px; margin: 10px 0; }
   </style>
 </head>
 <body>
@@ -48,32 +47,30 @@
     <option value="Hiburan">Hiburan</option>
     <option value="Pendidikan">Pendidikan</option>
     <option value="Teknologi">Teknologi</option>
-    <option value="Kesihatan">Kesihatan</option>
     <option value="Jenayah">Jenayah</option>
     <option value="Tempatan">Tempatan</option>
     <option value="Lain-lain">Lain-lain</option>
   </select>
 
-  <button class="btn btn-save" id="saveBtn" onclick="saveData()">2. SIMPAN KE GOOGLE DRIVE</button>
+  <button class="btn btn-save" id="saveBtn" onclick="saveData()">2. SIMPAN KE DRIVE & SHEET</button>
   <p id="status"></p>
 
   <hr>
   
-  <h3>📂 Rekod Terkini (Sheet)</h3>
+  <h3>📂 Rekod Terkini</h3>
   <div id="fileList">Memuatkan rekod...</div>
 
-  <button class="btn btn-pdf" onclick="exportPDF()">📄 EXPORT PDF</button>
+  <button class="btn btn-pdf" id="pdfBtn" onclick="exportPDF()">📄 EXPORT PDF LAPORAN</button>
 </div>
 
 <script>
-  // URL Web App Google Script anda
-  const GAS_URL = "https://script.google.com/macros/s/AKfycbzYhQnqAiKbyilZq9U4VvV7u2FLecE7mRGbKVwgyTqag5HJCyagyG7N7f_tTvtJAhUE/exec"; 
+  // PENTING: Gunakan URL Web App anda yang terkini
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbxaVLYwJ6kUzv0tg8iNxerMrsNsgE5MZzmqyzp19o7CkpFEsE4VurUC8NN5fBE-XLQ/exec"; 
 
   const video = document.getElementById('video');
   const canvas = document.getElementById('canvas');
   let capturedImage = null;
 
-  // Aktifkan Kamera
   navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
     .then(stream => { video.srcObject = stream; })
     .catch(err => alert("Kamera gagal: " + err));
@@ -83,74 +80,101 @@
     canvas.height = video.videoHeight;
     canvas.getContext('2d').drawImage(video, 0, 0);
     capturedImage = canvas.toDataURL('image/jpeg');
-    document.getElementById('status').innerText = "📸 Gambar sedia!";
+    document.getElementById('status').innerText = "📸 Gambar sedia untuk disimpan!";
+    document.getElementById('status').style.color = "#27ae60";
   }
 
   function saveData() {
     if (!capturedImage) return alert("Sila ambil gambar dahulu!");
     const tajuk = document.getElementById('tajuk').value;
     const jenis = document.getElementById('jenis').value;
-    if (!tajuk) return alert("Sila masukkan tajuk!");
+    if (!tajuk) return alert("Sila masukkan tajuk berita!");
 
     const btn = document.getElementById('saveBtn');
     const status = document.getElementById('status');
 
     btn.disabled = true;
-    status.innerText = "⏳ Sedang menyimpan...";
+    status.innerText = "⏳ Sedang menghantar ke Google...";
+    status.style.color = "#e67e22";
 
     fetch(GAS_URL, {
       method: "POST",
       mode: "no-cors", 
-      body: JSON.stringify({ action: "upload", image: capturedImage, tajuk: tajuk, jenis: jenis })
+      body: JSON.stringify({ image: capturedImage, tajuk: tajuk, jenis: jenis })
     }).then(() => {
-      status.innerText = "✅ Berjaya Simpan!";
+      status.innerText = "✅ Berjaya Disimpan!";
+      status.style.color = "#27ae60";
       btn.disabled = false;
       document.getElementById('tajuk').value = "";
       capturedImage = null;
-      setTimeout(loadRecords, 2000); // Refresh dashboard selepas 2 saat
+      setTimeout(loadRecords, 3000); // Tunggu 3 saat baru refresh senarai
     }).catch(err => {
-      status.innerText = "❌ Ralat!";
+      status.innerText = "❌ Ralat sambungan!";
       btn.disabled = false;
     });
   }
 
-  // Fungsi untuk ambil data dari Google Sheet
   function loadRecords() {
     const listDiv = document.getElementById('fileList');
     
-    // Guna JSONP atau fetch jika Code.gs anda support doGet return JSON
     fetch(GAS_URL + "?action=getList")
       .then(res => res.json())
       .then(data => {
-        if (data.length === 0) {
-          listDiv.innerHTML = "<p style='text-align:center;'>Tiada rekod.</p>";
+        if (!data || data.length === 0) {
+          listDiv.innerHTML = "<p style='text-align:center; font-size:13px; color:#888;'>Tiada rekod dijumpai.</p>";
           return;
         }
         let html = "";
         data.forEach(item => {
+          // Format tarikh jika ia objek tarikh
+          let dateStr = item.date;
           html += `
             <div class="card">
               <div class="card-info">
                 <span class="tag">${item.kategori}</span>
                 <strong>${item.tajuk}</strong>
-                <small>📅 ${item.date}</small>
+                <small>📅 ${dateStr}</small>
               </div>
-              <a href="${item.url}" target="_blank" class="view-link">BUKA</a>
+              <a href="${item.url}" target="_blank" class="view-link">LIHAT</a>
             </div>`;
         });
         listDiv.innerHTML = html;
       })
       .catch(err => {
-        listDiv.innerHTML = "<small>Gagal memuatkan rekod secara automatik.</small>";
+        listDiv.innerHTML = "<small style='color:red;'>Gagal memuatkan rekod. Sila muat semula halaman.</small>";
       });
   }
 
   function exportPDF() {
-    alert("Menjana PDF... Sila semak tab baru atau Google Drive anda.");
-    window.open(GAS_URL + "?action=exportPDF", "_blank");
+    const status = document.getElementById('status');
+    const pdfBtn = document.getElementById('pdfBtn');
+    
+    status.innerText = "⏳ Menjana PDF... Sila tunggu.";
+    pdfBtn.disabled = true;
+
+    fetch(GAS_URL + "?action=exportPDF")
+      .then(res => res.json())
+      .then(res => {
+        if(res.url) {
+          const link = document.createElement('a');
+          link.href = res.url;
+          link.download = "Laporan_Arkib_Berita.pdf";
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          status.innerText = "✅ PDF sedia dimuat turun!";
+        } else {
+          alert("Gagal menjana PDF.");
+        }
+        pdfBtn.disabled = false;
+      })
+      .catch(err => {
+        alert("Ralat PDF: " + err);
+        pdfBtn.disabled = false;
+      });
   }
 
-  // Muat dashboard bila buka page
+  // Muat dashboard secara automatik apabila aplikasi dibuka
   window.onload = loadRecords;
 </script>
 
